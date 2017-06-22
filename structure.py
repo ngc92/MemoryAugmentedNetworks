@@ -39,7 +39,7 @@ class DNCCell(RNNCell):
         self._memory.zero_state(batch_size, dtype))
 
   def call(self, inputs, state):
-    assert len(input.shape) == 2
+    assert len(inputs.shape) == 2
     # feed the controller
     cinput = tf.concat([inputs]+list(state.read), axis=1)
 
@@ -68,7 +68,7 @@ class DNCCell(RNNCell):
     return controller_out, new_state
 
 
-
+"""
 input = tf.placeholder(tf.float32, shape=(10, 5))
 lstm = tf.nn.rnn_cell.LSTMCell(25)
 memory = SimpleMemory(12, 42)
@@ -77,4 +77,4 @@ dnc = DNCCell(64, lstm, memory, [memory.read_head(), memory.read_head()], [memor
 tf.nn.static_rnn(dnc, [input]*5, dtype=tf.float32)
 
 writer = tf.summary.FileWriter("logs/test", graph=tf.get_default_graph())
-
+"""
