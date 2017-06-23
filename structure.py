@@ -63,18 +63,22 @@ class DNCCell(RNNCell):
             cvec = tf.layers.dense(controller_out, head.input_size, use_bias = False)
             memory = head(cvec, memory)
 
-    new_state = DNCStateTuple(controller_state = controller_state, read = readouts, memory = memory)
+    new_state = DNCStateTuple(controller_state = controller_state, read = tuple(readouts), memory = memory)
 
-    return controller_out, new_state
+    # combine readouts and output
+    controller_out = tf.layers.dense(controller_out, self.output_size, use_bias = False)
+    all_readouts   = tf.concat(readouts, axis=1)
+    readout_out    = tf.layers.dense(all_readouts, self.output_size, use_bias = False)
+    total_out      = controller_out + readout_out
+
+    return total_out, new_state
 
 
-"""
-input = tf.placeholder(tf.float32, shape=(10, 5))
+input = tf.placeholder(tf.float32, shape=(10, 5, 5))
 lstm = tf.nn.rnn_cell.LSTMCell(25)
 memory = SimpleMemory(12, 42)
 dnc = DNCCell(64, lstm, memory, [memory.read_head(), memory.read_head()], [memory.write_head()])
 
-tf.nn.static_rnn(dnc, [input]*5, dtype=tf.float32)
+tf.nn.dynamic_rnn(dnc, input, dtype=tf.float32)
 
 writer = tf.summary.FileWriter("logs/test", graph=tf.get_default_graph())
-"""
