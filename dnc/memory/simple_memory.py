@@ -1,3 +1,4 @@
+
 import tensorflow as tf
 
 class SimpleMemory:
@@ -32,11 +33,18 @@ class SimpleReadHead:
     def output_size(self):
         return self._out_size
 
-    def __call__(self, control, memory):
+    def state_size(self):
+        return 0
+
+    def zero_state(self, batch_size, dtype):
+        return tf.zeros(0, dtype=dtype)
+
+    def __call__(self, control, memory, state):
         # make control a probability vector
-        probs = tf.expand_dims(tf.nn.softmax(control), -1)
-        read  = tf.reduce_sum(tf.multiply(probs, memory), axis=1)
-        return read
+        probs = tf.nn.softmax(control)[:,:,None]
+        read  = tf.reduce_sum(probs * memory, 1)
+        return read, state
+
 
 class SimpleWriteHead:
     def __init__(self, input_size):
@@ -46,11 +54,17 @@ class SimpleWriteHead:
     def input_size(self):
         return self._in_size
 
-    def __call__(self, control, memory):
+    def state_size(self):
+        return 0
+
+    def zero_state(self, batch_size, dtype):
+        return tf.zeros(0, dtype=dtype)
+
+    def __call__(self, control, memory, state):
         mem_count = memory.shape[1]#tf.shape(memory)[1]
         p_part = control[:, 0:mem_count]
         d_part = control[:, mem_count:]
         probs = tf.expand_dims(tf.nn.softmax(p_part), -1)
         new_data = tf.expand_dims(d_part, 1)
-        return memory + tf.multiply(probs, new_data)
+        return memory + probs * new_data, state
 
