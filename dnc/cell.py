@@ -16,7 +16,8 @@ class DNCCell(RNNCell):
   """
 
   def __init__( self, controller, memory, read_heads, 
-                write_heads, output_size, reuse=None ):
+                write_heads, output_size, reuse=None,
+                output_nl = tf.identity ):
 
     super(DNCCell, self).__init__(_reuse=reuse)
     self._controller   = controller
@@ -24,6 +25,7 @@ class DNCCell(RNNCell):
     self._read_heads   = read_heads
     self._write_heads  = write_heads
     self._output_size  = output_size
+    self._output_nl    = output_nl
 
   @property
   def state_size(self):
@@ -103,6 +105,6 @@ class DNCCell(RNNCell):
     controller_out = tf.layers.dense(coutput, self.output_size, use_bias = False)
     all_readouts   = tf.concat(readouts, axis=1)
     readout_out    = tf.layers.dense(all_readouts, self.output_size, use_bias = False)
-    total_out      = controller_out + readout_out
+    total_out      = self._output_nl(controller_out + readout_out)
 
     return total_out, new_state
