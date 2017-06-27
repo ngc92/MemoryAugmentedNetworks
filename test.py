@@ -19,7 +19,7 @@ targets = tf.placeholder(dtype=tf.float32, shape=[None, None, INPUT_SIZE])
 loss = tf.losses.sigmoid_cross_entropy(logits=net[0], multi_class_labels=targets)
 cost = tf.reduce_sum((1 - targets * (1 - tf.exp(-net[0]))) * tf.sigmoid(net[0]))
 
-opt = tf.train.AdamOptimizer(1e-4)
+opt = tf.train.RMSPropOptimizer(1e-4, momentum=0.9)
 train = opt.minimize(loss)
 
 
