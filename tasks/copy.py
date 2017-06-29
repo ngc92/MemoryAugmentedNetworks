@@ -19,8 +19,10 @@ class CopyTask:
 
         input_seq  = np.zeros((n, self._sequence_length*2+1, vec_size))
         output_seq = np.zeros((n, self._sequence_length*2+1, vec_size))
+        mask_seq   = np.zeros((n, self._sequence_length*2+1, vec_size))
 
-        input_seq[:, 0:binaries.shape[1], :] = binaries
+        input_seq[:, 0:binaries.shape[1], :]   = binaries
         output_seq[:, binaries.shape[1]:-1, :] = binaries 
+        mask_seq[:, binaries.shape[1]:-1, :]   = 1 
         
-        return input_seq, output_seq
+        return input_seq, output_seq, mask_seq
