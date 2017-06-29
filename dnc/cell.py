@@ -75,11 +75,12 @@ class DNCCell(RNNCell):
 
     # actions of write heads
     write_states = []
+    memory_state = state.memory_state
     for (i, head) in enumerate(self._write_heads):
         with tf.variable_scope("write_interface"):
             # initializer?
             cvec = tf.layers.dense(coutput, head.input_size, use_bias = False)
-            memory_state, write_state = head(cvec, state.memory_state, state.write_states[i])
+            memory_state, write_state = head(cvec, memory_state, state.write_states[i])
             write_states.append(write_state)
 
     # actions of read heads
@@ -103,8 +104,12 @@ class DNCCell(RNNCell):
 
     # combine readouts and output to total output
     controller_out = tf.layers.dense(coutput, self.output_size, use_bias = False)
-    all_readouts   = tf.concat(readouts, axis=1)
-    readout_out    = tf.layers.dense(all_readouts, self.output_size, use_bias = False)
-    total_out      = self._output_nl(controller_out + readout_out)
+    if len(readouts) != 0:
+      all_readouts   = tf.concat(readouts, axis=1)
+      readout_out    = tf.layers.dense(all_readouts, self.output_size, use_bias = False)
+      total_out      = self._output_nl(controller_out + readout_out)
+    else:
+      print("Warning: Network does not read from memory!")
+      total_out      = self._output_nl(controller_out)
 
     return total_out, new_state
