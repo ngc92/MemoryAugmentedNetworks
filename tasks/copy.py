@@ -11,15 +11,17 @@ class CopyTask:
         self._alphabet = alphabet
         self._sequence_length = sequence_length
 
-    def __call__(self, n):
+    def __call__(self, n, sequence_length = None):
+        if sequence_length is None:
+            sequence_length = self._sequence_length
         # random sequence
         vec_size = int(np.ceil(np.log(self._alphabet + 1) / np.log(2)))
-        seq = np.random.randint(self._alphabet, size=(n, self._sequence_length)) + 1
+        seq = np.random.randint(self._alphabet, size=(n, sequence_length)) + 1
         binaries = np.array(list(map(lambda x: to_binary(x, vec_size), seq)))
 
-        input_seq  = np.zeros((n, self._sequence_length*2+1, vec_size))
-        output_seq = np.zeros((n, self._sequence_length*2+1, vec_size))
-        mask_seq   = np.zeros((n, self._sequence_length*2+1, vec_size))
+        input_seq  = np.zeros((n, sequence_length*2+1, vec_size))
+        output_seq = np.zeros((n, sequence_length*2+1, vec_size))
+        mask_seq   = np.zeros((n, sequence_length*2+1, vec_size))
 
         input_seq[:, 0:binaries.shape[1], :]   = binaries
         output_seq[:, binaries.shape[1]:-1, :] = binaries 
