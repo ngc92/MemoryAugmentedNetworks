@@ -15,29 +15,36 @@ def circ_conv(w, shifts, shiftws):
     return tf.add_n(ww)
 
 
+def ntm_split_state(control, memory_width, shifts):
+    W = memory_width
+
+    # extract raw interface parameters
+    raw_strength = control[:, 0]
+    raw_gate     = control[:, 1]
+    raw_sharping = control[:, 2]
+    raw_key      = control[:, 3:3+W]
+    raw_shiftws  = control[:, 3+W:3+W+len(shifts)]
+
+    # convert range and broadcast
+    strength = oneplus(raw_strength)[:, None]
+    gate     = tf.sigmoid(raw_gate)[:,  None]
+    sharping = oneplus(raw_sharping)[:, None]
+    key      = tf.nn.l2_normalize(raw_key, dim = 1)[:, None ,:]
+    shiftws  = tf.nn.softmax(raw_shiftws, dim = 1)
+    return strength, gate, sharping, key, shiftws
+
+
 # algorithm to obtain the weights
 # needed: a key, a strength, a gate, a sharpening exponent, and shift weights
 # also depends on the previous weights, which are in 'state'
 def ntm_weighting(control, memory, state, shifts, idx=0):
-    W = memory.shape[2].value
-
-    # extract raw interface parameters
-    raw_strength = control[:, idx+0]
-    raw_gate     = control[:, idx+1]
-    raw_sharping = control[:, idx+2]
-    raw_key      = control[:, idx+3:idx+3+W]
-    raw_shiftws  = control[:, idx+3+W:idx+3+W+len(shifts)]
-
-    # adapt them / map them to the right regions
-    strength = oneplus(raw_strength)[:,None]
-    gate     = tf.sigmoid(raw_gate)[:,None]
-    sharping = oneplus(raw_sharping)[:,None]
-    key      = tf.nn.l2_normalize(raw_key, dim = 1)[:,None,:]
-    shiftws  = tf.nn.softmax(raw_shiftws)
+    # get the parameters
+    strength, gate, sharping, key, shiftws = ntm_split_state(control[:, idx:], memory.shape[2].value, shifts)
 
     # cosine similarity
-    normed_mem = tf.nn.l2_normalize(memory, dim = 1)
+    normed_mem = tf.nn.l2_normalize(memory, dim = 2)
     cos_sims   = tf.reduce_sum(key * normed_mem, 2)
+    #cos_sims = tf.Print(cos_sims,  [cos_sims])
 
     # calculate content-, gated-, shifted-, and final-(=sharped) weights
     wc = tf.nn.softmax(strength * cos_sims, dim = 1)
