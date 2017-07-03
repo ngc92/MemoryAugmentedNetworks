@@ -63,7 +63,7 @@ class NTMMemory:
         self._count = count
 
     def zero_state(self, batch_size, dtype):
-        return tf.zeros((batch_size, self._count, self._width), dtype=dtype)
+        return tf.random_normal((batch_size, self._count, self._width), dtype=dtype)
 
     @property
     def state_size(self):
