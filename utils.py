@@ -23,3 +23,9 @@ def concate_to_image(tensor):
     cc = tf.reshape(tp, (shape[0], shape[1], shape[2]*shape[3]))
     # cc: (BATCH x COUNT x WIDTH*TIME)
     return cc[:, :, :, None]
+
+def weight_norms():
+    norm_sums = []
+    for v in tf.trainable_variables():
+        norm_sums += [(v.name, tf.reduce_sum(tf.square(v)))]
+    return norm_sums
