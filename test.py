@@ -6,6 +6,7 @@ from dnc.memory import Memory, NTMReadHead, NTMWriteHead
 from tasks.copy import CopyTask
 import numpy as np
 import tensorflow as tf
+from utils import *
 
 INPUT_SIZE = 8
 BATCH_SIZE = 32
@@ -26,19 +27,7 @@ loss = tf.losses.sigmoid_cross_entropy(logits=output, multi_class_labels=targets
 cost = tf.reduce_sum((1 - targets * (1 - tf.exp(-output))) * tf.sigmoid(output))
 
 opt = tf.train.RMSPropOptimizer(1e-4, momentum=0.9)
-train = opt.minimize(loss)
-
-def concate_to_image(tensor):
-    if len(tensor.shape) < 4:
-        return tf.transpose(tensor, perm=[0, 2, 1])[:, :, :, None]
-    # tensor: (BATCH x TIME x COUNT x WIDTH)
-    # [[0,0 ; 0,0], [1,1 ; 1,1]]
-    tp = tf.transpose(tensor, perm=[0, 2, 1, 3])
-    shape = tf.shape(tp)
-    # tp: (BATCH x COUNT x TIME x WIDTH)
-    cc = tf.reshape(tp, (shape[0], shape[1], shape[2]*shape[3]))
-    # cc: (BATCH x COUNT x WIDTH*TIME)
-    return cc[:, :, :, None]
+train = minimize_and_clip(opt, loss)
 
 print(net[2])
 names = ["memory", "read", "write"]
@@ -59,7 +48,7 @@ with tf.Session() as session:
     session.run(tf.global_variables_initializer())
     for i in range(200*1000):
 
-        lg = np.random.randint(19) + 1
+        lg = 10#np.random.randint(19) + 1
         if i % 100 == 0:
             lg = 20
         training_set = task(BATCH_SIZE, lg)
