@@ -1,4 +1,17 @@
 import tensorflow as tf
+import numpy as np
+
+def _flatten_to_2d(tensor):
+    print(tensor)
+    shape = tf.shape(tensor)
+    size  = tf.size(tensor)
+    return tf.reshape(tensor, (shape[0], size // shape[0]))
+
+def _total_size(shape):
+    size = 0
+    for s in shape:
+        size += np.prod(s)
+    return size
 
 class Memory:
     def __init__(self, count, width):
@@ -57,9 +70,33 @@ class Memory:
         cmds, nps = self._prepare_heads(controller_vec, memory_state[0], 
                                         memory_state[1])
         ro, ms    = self._execute_heads(memory_state[0], cmds)
-        print("NPS")
-        print(nps)
         return ro, (ms, nps)
+
+    @property
+    def summary_size(self):
+        return _total_size(self.summary_shape)
+
+    @property
+    def summary_shape(self):
+        l = [(self._count, self._width)]
+        l += [(h.state_size,) for h in self._heads]
+        return tuple(l)
+
+    def pack_summary(self, memory_state):
+        flat = list(map(_flatten_to_2d, memory_state[1]))
+        return tf.concat([_flatten_to_2d(memory_state[0])]+flat, axis=1)
+
+    def unpack_summary(self, summary):
+        batch_size = tf.shape(summary)[0]
+        time_size = tf.shape(summary)[1]
+        ss = list(map(np.prod, self.summary_shape))
+        split = tf.split(summary, ss, axis = 2)
+        def _make_shape(shape):
+            if isinstance(shape, int):
+                return [batch_size, time_size, shape]
+            else:
+                return [batch_size, time_size]+list(shape)
+        return [tf.reshape(data, _make_shape(shape)) for (data, shape) in zip(split, self.summary_shape)]
 
 class SharedState:
     def __init__(self, name):
