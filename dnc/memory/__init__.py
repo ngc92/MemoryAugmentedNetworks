@@ -1,4 +1,4 @@
 
 from .simple_memory import SimpleMemory
-from .ntm_memory import NTMMemory
+from .ntm import NTMReadHead, NTMWriteHead
 from .memory import *
