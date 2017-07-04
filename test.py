@@ -1,11 +1,10 @@
 import tensorflow as tf
+import numpy as np
 
 from dnc import DNC, LSTMCell
 from dnc.memory import Memory, NTMReadHead, NTMWriteHead
 
-from tasks.copy import CopyTask
-import numpy as np
-import tensorflow as tf
+from tasks import CopyTask
 from utils import *
 
 INPUT_SIZE = 8
