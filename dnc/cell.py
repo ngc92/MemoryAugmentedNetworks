@@ -14,13 +14,14 @@ class DNCCell(RNNCell):
   """
 
   def __init__( self, controller, memory, output_size, reuse=None,
-                output_nl = tf.identity ):
+                output_nl = tf.identity, log_memory = False ):
 
     super(DNCCell, self).__init__(_reuse=reuse)
     self._controller   = controller
     self._memory       = memory
     self._output_size  = output_size
     self._output_nl    = output_nl
+    self._log_memory   = log_memory
 
   @property
   def state_size(self):
@@ -32,8 +33,15 @@ class DNCCell(RNNCell):
     return size
 
   @property
-  def output_size(self):
+  def raw_output_size(self):
     return self._output_size
+
+  @property
+  def output_size(self):
+    if self._log_memory:
+        return self._output_size + self._memory.summary_size
+    else:
+        return self._output_size
 
   def zero_state(self, batch_size, dtype):
     controller_state = self._controller.zero_state(batch_size, dtype)
@@ -60,13 +68,21 @@ class DNCCell(RNNCell):
                                memory_state) 
 
     # combine readouts and output to total output
-    controller_out = tf.layers.dense(coutput, self.output_size, use_bias = False)
+    controller_out = tf.layers.dense(coutput, self.raw_output_size, use_bias = False)
     if len(readouts) != 0:
       all_readouts   = tf.concat(readouts, axis=1)
-      readout_out    = tf.layers.dense(all_readouts, self.output_size, use_bias = False)
+      readout_out    = tf.layers.dense(all_readouts, self.raw_output_size, use_bias = False)
       total_out      = self._output_nl(controller_out + readout_out)
     else:
       print("Warning: Network does not read from memory!")
       total_out      = self._output_nl(controller_out)
 
-    return total_out, new_state
+    if not self._log_memory:
+        return total_out, new_state
+    else:
+        summary = self._memory.pack_summary(new_state.memory_state)
+        result = tf.concat([total_out, summary], axis=1)
+        return result, new_state
+
+  def unpack_summary(self, summary):
+    return self._memory.unpack_summary(summary)
