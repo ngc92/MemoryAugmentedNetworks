@@ -14,10 +14,11 @@ def _total_size(shape):
     return size
 
 class Memory:
-    def __init__(self, count, width):
+    def __init__(self, count, width, init_state="randomized"):
         self._heads = []
         self._count = count
         self._width = width
+        self._init_state = init_state
 
     def add_head(self, head, *args, **kwargs):
         self._heads += [head(count=self._count, width=self._width, *args, **kwargs)]
@@ -34,9 +35,24 @@ class Memory:
         return readout_sizes, (mem_size, head_private)
 
     def zero_state(self, batch_size, dtype):
-        readouts         = [tf.zeros((batch_size, h.output_size), dtype) for h in self.read_heads]
-        memory_state     = tf.random_normal((batch_size, self._count, self._width), dtype=dtype)
-        private          = tuple(h.zero_state(batch_size, dtype) for h in self._heads)
+        if self._init_state == "trainable":
+            init_values   = np.random.rand(1, self._count, self._width)
+            single_memory = tf.Variable(tf.constant(init_values, dtype=dtype))
+            memory_state  = tf.tile(single_memory, tf.stack([batch_size, 1, 1]))
+
+        elif self._init_state == "randomized":
+            memory_state  = tf.random_normal((batch_size, self._count, self._width), dtype=dtype)
+
+        elif self._init_state == "fixed":
+            single_memory = tf.constant(np.random.rand(1, self._count, self._width), dtype=dtype)
+            memory_state  = tf.tile(single_memory, tf.stack([batch_size, 1, 1]))
+
+        else:
+            memory_state  = tf.tile(self._init_state, tf.stack([batch_size, 1, 1]))
+
+        readouts = [tf.zeros((batch_size, h.output_size), dtype) for h in self.read_heads]
+        private  = tuple(h.zero_state(batch_size, dtype) for h in self._heads)
+
         return readouts, (memory_state, private)
 
     def _prepare_heads(self, controller_vec, memory_state, private_states):
