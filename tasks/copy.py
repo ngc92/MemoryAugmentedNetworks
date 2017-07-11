@@ -8,6 +8,11 @@ class CopyTask(Task):
         self._bits = bits
         self._sequence_length = sequence_length
 
+    @property
+    def default_params(self):
+        return (self._sequence_length,)
+
+
     def __call__(self, n, sequence_length = None):
         sequence_length = self._get_value("sequence_length", sequence_length)
 

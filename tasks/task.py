@@ -13,6 +13,10 @@ class Task:
     def output_size(self):
         return self._output_size
 
+    @property
+    def default_params(self):
+        return tuple()
+
     def _get_value(self, name, supplied):
         if supplied is None:
             value = getattr(self, "_"+name)

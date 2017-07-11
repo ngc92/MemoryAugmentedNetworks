@@ -16,11 +16,14 @@ class RecallTask(Task):
         self._vectors = vectors
         self._symbols = symbols
 
+    @property
+    def default_params(self):
+        return (self._symbols, self._vectors)
+
     def __call__(self, n, symbols=None, vectors=None):
         symbols = self._get_value("symbols", symbols)
         vectors = self._get_value("vectors", vectors)
 
-        print(symbols)
         request = np.random.randint(symbols-1)
         symbol_list = [random_symbol(n,self._bits, vectors) for i in range(symbols)]
         symbol_list.append(symbol_list[request])

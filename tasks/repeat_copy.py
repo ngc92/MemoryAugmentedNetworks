@@ -8,6 +8,10 @@ class RepeatCopyTask(Task):
         self._sequence_length = sequence_length
         self._repeats = repeats
 
+    @property
+    def default_params(self):
+        return (self._sequence_length, self._repeats)
+
     def __call__(self, n, sequence_length=None, repeats=None):
         sequence_length = self._get_value("sequence_length", sequence_length)
         repeats = self._get_value("repeats", repeats)
