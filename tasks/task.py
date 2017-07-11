@@ -13,6 +13,16 @@ class Task:
     def output_size(self):
         return self._output_size
 
+    def _get_value(self, name, supplied):
+        if supplied is None:
+            value = getattr(self, "_"+name)
+        else:
+            value = supplied
+        if isinstance(value, tuple):
+            return np.random.randint(value[1] - value[0]) + value[0]
+        else:
+            return value
+
 
 # utility functions for tasks
 def to_binary(x, l):

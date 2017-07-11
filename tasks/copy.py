@@ -9,8 +9,8 @@ class CopyTask(Task):
         self._sequence_length = sequence_length
 
     def __call__(self, n, sequence_length = None):
-        if sequence_length is None:
-            sequence_length = self._sequence_length
+        sequence_length = self._get_value("sequence_length", sequence_length)
+
         # random sequence
         seq = np.random.randint(2**self._bits, size=(n, sequence_length))
         binaries = np.array(list(map(lambda x: to_binary(x, self._bits), seq)))
