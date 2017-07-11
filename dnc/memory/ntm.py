@@ -58,16 +58,17 @@ def ntm_weighting(control, memory, state, shifts, idx=0):
 
 
 class NTMReadHead(Head):
-    def __init__(self, count, width, shifts):
+    def __init__(self, count, width, shifts, name):
         super(NTMReadHead, self).__init__(
             in_size=width + 3 + len(shifts), 
             out_size=width, 
-            state_size=count)
+            name=name)
         self._shifts = shifts
+        self._weight_state = self._add_state("weights", (count,))
 
     def command(self, control, memory, state):
-        weights = ntm_weighting(control, memory, state, self._shifts)
-        return weights, weights
+        weights = ntm_weighting(control, memory, self._weight_state.get_value_from(state), self._shifts)
+        return weights, {self._weight_state.name:weights}
 
     def execute(self, memory, command):
         readout = tf.reduce_sum(memory * command[:,:,None], 1)
@@ -75,12 +76,13 @@ class NTMReadHead(Head):
 
 
 class NTMWriteHead(Head):
-    def __init__(self, count, width, shifts=[-1, 0, 1]):
+    def __init__(self, count, width, shifts=[-1, 0, 1], name=""):
         super(NTMWriteHead, self).__init__(
             in_size=3 * width + 3 + len(shifts), 
             out_size=None, 
-            state_size=count)
+            name = name)
         self._shifts = shifts
+        self._weight_state = self._add_state("weights", (count,))
 
     def command(self, control, memory, state):
         W = memory.shape[2].value
@@ -88,9 +90,8 @@ class NTMWriteHead(Head):
         # decompose interface parameters
         erase   = tf.sigmoid(control[:, :W])
         write   = control[:, W:2*W]
-        weights = ntm_weighting(control, memory, state, self._shifts, idx=2*W)
-
-        return (erase, write, weights), weights
+        weights = ntm_weighting(control, memory, self._weight_state.get_value_from(state), self._shifts, idx=2*W)
+        return (erase, write, weights), {self._weight_state.name:weights}
 
     def execute(self, memory, command):
         erase   = command[0][:, None, :]

@@ -27,8 +27,7 @@ cost = tf.reduce_sum((1 - targets * (1 - tf.exp(-output))) * tf.sigmoid(output))
 opt = tf.train.RMSPropOptimizer(1e-4, momentum=0.9)
 train = minimize_and_clip(opt, loss)
 
-names = ["memory", "read", "write"]
-img_summary = [tf.summary.image(name, concate_to_image(data), max_outputs=1) for (name, data) in zip(names, net[2])]
+img_summary = [tf.summary.image(key, concate_to_image(net[2][key]), max_outputs=1) for key in net[2]]
 img_summary +=[tf.summary.image("IO/input", concate_to_image(input), max_outputs=1)]
 img_summary +=[tf.summary.image("IO/targets", concate_to_image(targets), max_outputs=1)]
 img_summary +=[tf.summary.image("IO/output", tf.sigmoid(concate_to_image(net[0])), max_outputs=1)]
