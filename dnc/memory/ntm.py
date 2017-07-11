@@ -4,7 +4,7 @@ from .memory import Head
 
 # helper function to map to [1, \infty]
 def oneplus(x):
-    return 1 + tf.log(1 + tf.exp(x))
+    return 1 + tf.nn.softplus(x)
 
 # circular convolution, needed for ntm_weighting; not tested
 def circ_conv(w, shifts, shiftws):
@@ -57,8 +57,6 @@ def ntm_weighting(control, memory, state, shifts, idx=0):
     return w / tf.reduce_sum(w, 1)[:,None]
 
 
-
-
 class NTMReadHead(Head):
     def __init__(self, count, width, shifts):
         super(NTMReadHead, self).__init__(
@@ -74,6 +72,7 @@ class NTMReadHead(Head):
     def execute(self, memory, command):
         readout = tf.reduce_sum(memory * command[:,:,None], 1)
         return readout, memory
+
 
 class NTMWriteHead(Head):
     def __init__(self, count, width, shifts=[-1, 0, 1]):
