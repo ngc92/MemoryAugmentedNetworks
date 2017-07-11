@@ -2,6 +2,7 @@
 import tensorflow as tf
 import numpy as np
 
+import dnc
 from dnc import DNC, LSTMCell
 from dnc.memory import Memory, NTMReadHead, NTMWriteHead
 
@@ -14,9 +15,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--msize", type=int, default=128)
 parser.add_argument("--mwidth", type=int, default=16)
 parser.add_argument("--batch-size", type=int, default=32)
-parser.add_argument("--rsize", type=int, default=100)
+parser.add_argument("--controller-size", type=int, default=100)
 parser.add_argument("--minit", type=str, default="randomized")
 parser.add_argument("--task", type=str, default="CopyTask(8, (1, 20))")
+parser.add_argument("--controller", type=str, choices=["lstm", "multilstm", "ff"], default="lstm")
+parser.add_argument("--no-dnc", action='store_true')
 args = parser.parse_args()
 
 BATCH_SIZE = args.batch_size
@@ -28,22 +31,33 @@ memory.add_head(NTMReadHead, shifts=[-1, 0, 1])
 memory.add_head(NTMWriteHead, shifts=[-1, 0, 1])
 
 input = tf.placeholder(tf.float32, shape=(None, None, task.input_size))
-#lstm  = tf.nn.rnn_cell.MultiRNNCell([LSTMCell(256) for i in range(3)])
-lstm  = LSTMCell(args.rsize)
+#
+if args.controller == 'lstm':
+    controller  = LSTMCell(args.controller_size)
+elif args.controller == 'multilstm':
+    controller  = tf.nn.rnn_cell.MultiRNNCell([LSTMCell(args.controller_size) for i in range(3)])
+elif args.controller == 'ff':
+    controller = dnc.ff.FFWrapper(dnc.ff.simple_feedforward(hidden=[args.controller_size]*2))
 
-net = DNC(input, memory, output_size=task.output_size, controller = lstm, log_memory=True)
+if not args.no_dnc:
+    net = DNC(input, memory, output_size=task.output_size, controller = controller, log_memory=True)
+    output  = net[0]
+else:
+    output, _ = tf.nn.dynamic_rnn(controller, input, dtype=tf.float32)
+    output = tf.layers.dense(output, task.output_size, use_bias=False)
+
 targets = tf.placeholder(dtype=tf.float32, shape=[None, None, task.output_size])
-output  = net[0]
 loss = tf.losses.sigmoid_cross_entropy(logits=output, multi_class_labels=targets)
 cost = tf.reduce_sum((1 - targets * (1 - tf.exp(-output))) * tf.sigmoid(output)) / BATCH_SIZE
 
 opt = tf.train.RMSPropOptimizer(1e-4, momentum=0.9)
 train = minimize_and_clip(opt, loss)
 
-img_summary = [tf.summary.image(key, concate_to_image(net[2][key]), max_outputs=1) for key in net[2]]
-img_summary +=[tf.summary.image("IO/input", concate_to_image(input), max_outputs=1)]
-img_summary +=[tf.summary.image("IO/targets", concate_to_image(targets), max_outputs=1)]
-img_summary +=[tf.summary.image("IO/output", tf.sigmoid(concate_to_image(net[0])), max_outputs=1)]
+img_summary =  [tf.summary.image("IO/input", concate_to_image(input), max_outputs=1)]
+img_summary += [tf.summary.image("IO/targets", concate_to_image(targets), max_outputs=1)]
+img_summary += [tf.summary.image("IO/output", tf.sigmoid(concate_to_image(output)), max_outputs=1)]
+if not args.no_dnc:
+    img_summary += [tf.summary.image(key, concate_to_image(net[2][key]), max_outputs=1) for key in net[2]]
 img_summary = tf.summary.merge(img_summary)
 scalar_summary = [tf.summary.scalar("train/cost", cost), tf.summary.scalar("train/loss", loss)]
 scalar_summary += [tf.summary.scalar(name, value) for (name, value) in weight_norms()]

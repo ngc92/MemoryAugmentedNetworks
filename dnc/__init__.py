@@ -2,6 +2,7 @@ import tensorflow as tf
 LSTMCell = tf.nn.rnn_cell.LSTMCell
 
 from .cell import DNCCell
+from . import ff
 
 def DNC(input, *args, controller = None, dtype=tf.float32, log_memory=False, **kwargs):
     if controller is None:
