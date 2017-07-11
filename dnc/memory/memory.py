@@ -27,8 +27,8 @@ class Memory:
         """ count: number of memory cells
             width: number of "bits" in a memory cell
             init_state: initial state of the memory, one of
-			"randomized", "trainable", "fixed",
-			or a predifined value. 
+			"randomized", "trainable", "fixed", 
+                        "zero", or a predifined value. 
         """
         self._heads = []
         self._count = count
@@ -75,6 +75,10 @@ class Memory:
 
         elif self._init_state == "fixed":
             single_memory = tf.constant(np.random.rand(1, self._count, self._width), dtype=dtype)
+            memory_state  = tf.tile(single_memory, tf.stack([batch_size, 1, 1]))
+
+        elif self._init_state == "zero":
+            single_memory = tf.zeros((1, self._count, self._width), dtype=dtype)
             memory_state  = tf.tile(single_memory, tf.stack([batch_size, 1, 1]))
 
         else:
