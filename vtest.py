@@ -23,6 +23,7 @@ parser.add_argument("--no-dnc", action='store_true')
 parser.add_argument("--test-scale", type=float, default=2)
 parser.add_argument("--savedir", type=str, default="model")
 parser.add_argument("--logdir",  type=str, default="logs")
+parser.add_argument("--learningrate",  type=float, default=1e-4)
 args = parser.parse_args()
 
 BATCH_SIZE = args.batch_size
@@ -53,7 +54,7 @@ targets = tf.placeholder(dtype=tf.float32, shape=[None, None, task.output_size])
 loss = tf.losses.sigmoid_cross_entropy(logits=output, multi_class_labels=targets)
 cost = tf.reduce_sum((1 - targets * (1 - tf.exp(-output))) * tf.sigmoid(output)) / BATCH_SIZE
 
-opt = tf.train.RMSPropOptimizer(1e-4, momentum=0.9)
+opt = tf.train.RMSPropOptimizer(args.learningrate, momentum=0.9)
 train = minimize_and_clip(opt, loss)
 
 img_summary =  [tf.summary.image("IO/input", concate_to_image(input), max_outputs=1)]
@@ -102,4 +103,4 @@ with tf.Session() as session:
             w.add_summary(s1, global_step=i*BATCH_SIZE)
             w.add_summary(s2, global_step=i*BATCH_SIZE)
             print(i * BATCH_SIZE / 1000, l, c)
-            saver.save(session, os.path.join(args.savedir, 'model'), global_step=i)
+            saver.save(session, os.path.join(args.savedir, 'model'), global_step=i*BATCH_SIZE)
