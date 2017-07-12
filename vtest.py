@@ -9,7 +9,7 @@ from dnc.memory import Memory, NTMReadHead, NTMWriteHead
 from tasks import *
 from utils import *
 
-import argparse
+import argparse, os
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--msize", type=int, default=128)
@@ -20,6 +20,9 @@ parser.add_argument("--minit", type=str, default="randomized")
 parser.add_argument("--task", type=str, default="CopyTask(8, (1, 20))")
 parser.add_argument("--controller", type=str, choices=["lstm", "multilstm", "ff"], default="lstm")
 parser.add_argument("--no-dnc", action='store_true')
+parser.add_argument("--test-scale", type=float, default=2)
+parser.add_argument("--savedir", type=str, default="model")
+parser.add_argument("--logdir",  type=str, default="logs")
 args = parser.parse_args()
 
 BATCH_SIZE = args.batch_size
@@ -70,7 +73,8 @@ for v in tf.trainable_variables():
     pcount += np.product(list(map(lambda x: x.value, v.shape)))
 print("Number of parameters: %i"%pcount)
 
-w = tf.summary.FileWriter("logs")
+w = tf.summary.FileWriter(args.logdir)
+saver = tf.train.Saver()
 
 with tf.Session() as session:
     session.run(tf.global_variables_initializer())
@@ -85,9 +89,9 @@ with tf.Session() as session:
         else: # testing
             def make_big(data):
                 if isinstance(data, tuple):
-                    return data[1]*2
+                    return int(data[1]*args.test_scale)
                 else:
-                    return data * 2
+                    return int(data * args.test_scale)
             
             defp = map(make_big, task.default_params)
             training_set = task(BATCH_SIZE, *defp)
@@ -98,3 +102,4 @@ with tf.Session() as session:
             w.add_summary(s1, global_step=i*BATCH_SIZE)
             w.add_summary(s2, global_step=i*BATCH_SIZE)
             print(i * BATCH_SIZE / 1000, l, c)
+            saver.save(session, os.path.join(args.savedir, 'model'), global_step=i)
