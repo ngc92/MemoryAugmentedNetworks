@@ -25,7 +25,7 @@ class RecallTask(Task):
         self._vectors = val[0]
         self._symbols = val[1]
 
-def __call__(self, n, vectors=None, symbols=None):
+    def __call__(self, n, vectors=None, symbols=None):
         vectors = self._get_value("vectors", vectors)
         symbols = self._get_value("symbols", symbols)
 

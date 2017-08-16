@@ -17,7 +17,7 @@ parser.add_argument("--batch-size", type=int, default=32)
 parser.add_argument("--controller-size", type=int, default=100)
 parser.add_argument("--minit", type=str, default="randomized")
 parser.add_argument("--task", type=str, default="CopyTask(8, (1, 20))")
-parser.add_argument("--test-task", type=str, default="")
+parser.add_argument("--test-params", type=str, default="")
 parser.add_argument("--controller", type=str, choices=["lstm", "multilstm", "ff"], default="lstm")
 parser.add_argument("--no-dnc", action='store_true')
 parser.add_argument("--savedir", type=str, default="model")
@@ -29,15 +29,10 @@ args = parser.parse_args()
 BATCH_SIZE = args.batch_size
 
 task = eval(args.task)
-
-if args.test_task.empty():
-    test_task = copy(task)
-    test_task.set_default_params( map(np.max, task.default_params) )
+if args.test_params:
+    test_params = eval(args.test_params) 
 else:
-    test_task = eval(args.test_task)
-
-if (task.input_size != test_task.input_size):
-    raise Exception("Task and TestTask not compatible.")
+    test_params = tuple(np.max(p) for p in task.default_params)
 
 
 memory = Memory(args.msize, args.mwidth, init_state=args.minit)
@@ -106,7 +101,7 @@ with tf.Session() as session:
 
             w.add_summary(s2, global_step=i*BATCH_SIZE)
         else: # testing
-            training_set = test_task(BATCH_SIZE)
+            training_set = task(BATCH_SIZE, *test_params)
             l, c, s1, s2 = session.run([loss, cost, img_summary, scalar_test_summary],
                                             feed_dict={ input: training_set[0],
                                                         targets: training_set[1],
