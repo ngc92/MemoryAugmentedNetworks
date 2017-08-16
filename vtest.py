@@ -1,4 +1,3 @@
-
 import tensorflow as tf
 import numpy as np
 
@@ -18,9 +17,9 @@ parser.add_argument("--batch-size", type=int, default=32)
 parser.add_argument("--controller-size", type=int, default=100)
 parser.add_argument("--minit", type=str, default="randomized")
 parser.add_argument("--task", type=str, default="CopyTask(8, (1, 20))")
+parser.add_argument("--test-task", type=str, default="")
 parser.add_argument("--controller", type=str, choices=["lstm", "multilstm", "ff"], default="lstm")
 parser.add_argument("--no-dnc", action='store_true')
-parser.add_argument("--test-scale", type=float, default=2)
 parser.add_argument("--savedir", type=str, default="model")
 parser.add_argument("--logdir",  type=str, default="logs")
 parser.add_argument("--learningrate",  type=float, default=1e-4)
@@ -30,6 +29,16 @@ args = parser.parse_args()
 BATCH_SIZE = args.batch_size
 
 task = eval(args.task)
+
+if args.test_task.empty():
+    test_task = copy(task)
+    test_task.set_default_params( map(np.max, task.default_params) )
+else:
+    test_task = eval(args.test_task)
+
+if (task.input_size != test_task.input_size):
+    raise Exception("Task and TestTask not compatible.")
+
 
 memory = Memory(args.msize, args.mwidth, init_state=args.minit)
 memory.add_head(NTMReadHead, shifts=[-1, 0, 1])
@@ -97,14 +106,7 @@ with tf.Session() as session:
 
             w.add_summary(s2, global_step=i*BATCH_SIZE)
         else: # testing
-            def make_big(data):
-                if isinstance(data, tuple):
-                    return int(data[1]*args.test_scale)
-                else:
-                    return int(data * args.test_scale)
-            
-            defp = map(make_big, task.default_params)
-            training_set = task(BATCH_SIZE, *defp)
+            training_set = test_task(BATCH_SIZE)
             l, c, s1, s2 = session.run([loss, cost, img_summary, scalar_test_summary],
                                             feed_dict={ input: training_set[0],
                                                         targets: training_set[1],

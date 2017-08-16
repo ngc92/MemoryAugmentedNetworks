@@ -20,9 +20,9 @@ class RecallTask(Task):
     def default_params(self):
         return (self._vectors, self._symbols)
 
-    def __call__(self, n, symbols=None, vectors=None):
-        symbols = self._get_value("symbols", symbols)
+    def __call__(self, n, vectors=None, symbols=None):
         vectors = self._get_value("vectors", vectors)
+        symbols = self._get_value("symbols", symbols)
 
         request = np.random.randint(symbols-1)
         symbol_list = [random_symbol(n,self._bits, vectors) for i in range(symbols)]
