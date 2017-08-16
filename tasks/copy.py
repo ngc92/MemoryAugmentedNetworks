@@ -12,6 +12,10 @@ class CopyTask(Task):
     def default_params(self):
         return (self._sequence_length,)
 
+    @default_params.setter
+    def default_params(self, val):
+        self._sequence_length = val[0]
+
 
     def __call__(self, n, sequence_length = None):
         sequence_length = self._get_value("sequence_length", sequence_length)

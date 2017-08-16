@@ -12,6 +12,11 @@ class RepeatCopyTask(Task):
     def default_params(self):
         return (self._sequence_length, self._repeats)
 
+    @default_params.setter
+    def default_params(self, val):
+        self._sequence_length = val[0]
+        self._repeats = val[1]
+
     def __call__(self, n, sequence_length=None, repeats=None):
         sequence_length = self._get_value("sequence_length", sequence_length)
         repeats = self._get_value("repeats", repeats)

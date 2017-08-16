@@ -20,7 +20,12 @@ class RecallTask(Task):
     def default_params(self):
         return (self._vectors, self._symbols)
 
-    def __call__(self, n, vectors=None, symbols=None):
+    @default_params.setter
+    def default_params(self, val):
+        self._vectors = val[0]
+        self._symbols = val[1]
+
+def __call__(self, n, vectors=None, symbols=None):
         vectors = self._get_value("vectors", vectors)
         symbols = self._get_value("symbols", symbols)
 
