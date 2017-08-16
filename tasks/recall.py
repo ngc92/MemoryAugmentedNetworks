@@ -37,6 +37,6 @@ class RecallTask(Task):
         input_seq[:, symbols*(vectors+1), -1] = 1
         input_seq[:, (symbols+1)*(vectors+1), -1] = 1
         output_seq[:, (symbols+1)*(vectors+1)+1:, :-2] = symbol_list[request+1][:, 1:, :-2]
-        mask[:, (symbols+1)*(vectors+1)+1:, :-2] = 1
+        mask[:, (symbols+1)*(vectors+1)+1:, :] = 1
         
         return input_seq, output_seq, mask

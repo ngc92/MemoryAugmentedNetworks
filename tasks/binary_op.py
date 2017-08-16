@@ -42,7 +42,7 @@ class BinaryOpTask(Task):
         input_seq[:, :2*(vectors+1), :] = np.concatenate(np.array(symbol_list),axis =1)
         input_seq[:, 2*(vectors+1), -1] = 1
         output_seq[:, 2*(vectors+1)+1:, :-2] = target
-        mask[:, 2*(vectors+1)+1:, :-2] = 1
+        mask[:, 2*(vectors+1)+1:, :] = 1
         
         return input_seq, output_seq, mask
 

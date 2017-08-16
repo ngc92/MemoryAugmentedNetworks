@@ -22,10 +22,12 @@ class CopyTask(Task):
 
         input_seq  = np.zeros((n, sequence_length*2+2, self._bits+2))
         output_seq = np.zeros((n, sequence_length*2+2, self._bits+2))
+        mask       = np.zeros((n, sequence_length*2+2, self._bits+2))
 
         input_seq[:, 1:sequence_length+1, :-2] = binaries
         output_seq[:, sequence_length+2:, :-2] = binaries
+        mask[:, sequence_length+2:, :] = 1
         input_seq[:,0,-2] = 1
         input_seq[:,sequence_length+1,-1] = 1
 
-        return input_seq, output_seq
+        return input_seq, output_seq, mask
