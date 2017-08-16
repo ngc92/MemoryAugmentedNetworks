@@ -29,6 +29,10 @@ class BinaryOpTask(Task):
         self._vectors = vectors
         self._binary_op = binary_op
 
+    @property
+    def default_params(self):
+        return (self._vectors)
+
     def __call__(self, n, vectors=None):
         if vectors is None:
             vectors = self._vectors

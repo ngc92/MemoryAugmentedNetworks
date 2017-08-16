@@ -18,7 +18,7 @@ class RecallTask(Task):
 
     @property
     def default_params(self):
-        return (self._symbols, self._vectors)
+        return (self._vectors, self._symbols)
 
     def __call__(self, n, symbols=None, vectors=None):
         symbols = self._get_value("symbols", symbols)
