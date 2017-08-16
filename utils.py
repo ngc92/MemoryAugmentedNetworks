@@ -24,6 +24,7 @@ def concate_to_image(tensor):
     # cc: (BATCH x COUNT x WIDTH*TIME)
     return cc[:, :, :, None]
 
+
 def weight_norms():
     norm_sums = []
     for v in tf.trainable_variables():

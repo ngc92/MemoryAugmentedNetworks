@@ -4,13 +4,14 @@ import numpy as np
 from dnc import DNC, LSTMCell
 from dnc.memory import Memory, NTMReadHead, NTMWriteHead
 
-from tasks import CopyTask, RepeatCopyTask, RecallTask
+from tasks import CopyTask, RepeatCopyTask, AndTask, XorTask, MergeTask
 from utils import *
 
 INPUT_SIZE = 8
 BATCH_SIZE = 32
 
-memory = Memory(25, 20)
+memory = Memory(25, 6)
+memory.add_head(NTMReadHead, shifts=[-1, 0, 1])
 memory.add_head(NTMReadHead, shifts=[-1, 0, 1])
 memory.add_head(NTMWriteHead, shifts=[-1, 0, 1])
 
@@ -38,7 +39,7 @@ scalar_summary = [tf.summary.scalar("cost", cost), tf.summary.scalar("loss", los
 scalar_summary += [tf.summary.scalar(name, value) for (name, value) in weight_norms()]
 scalar_summary = tf.summary.merge(scalar_summary)
 
-task = RecallTask(INPUT_SIZE, 3, 5)
+task = MergeTask(INPUT_SIZE, 8)
 
 pcount = 0
 for v in tf.trainable_variables():
@@ -51,10 +52,10 @@ with tf.Session() as session:
     session.run(tf.global_variables_initializer())
     for i in range(200*1000):
 
-        symbols = np.random.randint(5) + 2
+        vectors = np.random.randint(7) + 2
         if i % 100 == 0:
-            symbols = 6
-        training_set = task(BATCH_SIZE, symbols)
+            vectors = 10
+        training_set = task(BATCH_SIZE, vectors)
         l, o, c, s1, s2 = session.run([loss, train, cost, img_summary, scalar_summary],
                                         feed_dict={ input: training_set[0],
                                                     targets: training_set[1],
