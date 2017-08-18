@@ -38,8 +38,8 @@ class BinaryOpTask(Task):
         self._vectors = val[0]
 
     def __call__(self, n, vectors=None):
-        if vectors is None:
-            vectors = self._vectors
+        vectors = self._get_value("vectors", vectors)
+        
         symbol_list = [random_symbol(n,self._bits,vectors) for i in range(2)]
         target = self._binary_op(symbol_list[0][:, 1:, :-2], symbol_list[1][:, 1:, :-2])
 
